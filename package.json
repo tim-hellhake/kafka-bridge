@@ -1,0 +1,39 @@
+{
+  "name": "kafka-bridge",
+  "display_name": "Kafka bridge",
+  "version": "0.1.0",
+  "description": "Expose your devices as topics on a kafka broker",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "install": "node fix-kafka-types.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc -p ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tim-hellhake/kafka-bridge.git"
+  },
+  "author": "Tim Hellhake",
+  "license": "MPL-2.0",
+  "bugs": {
+    "url": "https://github.com/tim-hellhake/kafka-bridge/issues"
+  },
+  "homepage": "https://github.com/tim-hellhake/kafka-bridge#readme",
+  "files": [
+    "LICENSE",
+    "SHA256SUMS",
+    "lib/index.js",
+    "lib/kafka-bridge.js",
+    "manifest.json"
+  ],
+  "dependencies": {
+    "kafka-node": "^5.0.0",
+    "websocket": "^1.0.31",
+    "webthings-client": "1.1.0"
+  },
+  "devDependencies": {
+    "@types/websocket": "^1.0.0",
+    "typescript": "^3.9.2"
+  }
+}

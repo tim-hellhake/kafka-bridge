@@ -1,0 +1,38 @@
+{
+  "manifest_version": 1,
+  "id": "kafka-bridge",
+  "name": "Kafka bridge",
+  "short_name": "Kafka bridge",
+  "version": "0.1.0",
+  "description": "Expose your devices as topics on a kafka broker",
+  "homepage_url": "https://github.com/tim-hellhake/kafka-bridge#readme",
+  "license": "MPL-2.0",
+  "author": "Tim Hellhake",
+  "gateway_specific_settings": {
+    "webthings": {
+      "exec": "{nodeLoader} {path}",
+      "strict_min_version": "0.10.0",
+      "strict_max_version": "*",
+      "primary_type": "adapter"
+    }
+  },
+  "options": {
+    "schema": {
+      "type": "object",
+      "required": [
+        "accessToken",
+        "kafkaHost"
+      ],
+      "properties": {
+        "accessToken": {
+          "type": "string",
+          "title": "Access token for the gateway"
+        },
+        "kafkaHost": {
+          "type": "string",
+          "title": "One or multiple kafka broker:host combinations delimited by comma"
+        }
+      }
+    }
+  }
+}
