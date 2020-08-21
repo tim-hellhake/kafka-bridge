@@ -1,6 +1,6 @@
 # Kafka bridge
 
-[![Build Status](https://travis-ci.org/tim-hellhake/kafka-bridge.svg?branch=master)](https://travis-ci.org/tim-hellhake/kafka-bridge)
+[![Build Status](https://github.com/tim-hellhake/kafka-bridge/workflows/Build/badge.svg)](https://github.com/tim-hellhake/kafka-bridge/actions?query=workflow%3ABuild)
 [![dependencies](https://david-dm.org/tim-hellhake/kafka-bridge.svg)](https://david-dm.org/tim-hellhake/kafka-bridge)
 [![devDependencies](https://david-dm.org/tim-hellhake/kafka-bridge/dev-status.svg)](https://david-dm.org/tim-hellhake/kafka-bridge?type=dev)
 [![optionalDependencies](https://david-dm.org/tim-hellhake/kafka-bridge/optional-status.svg)](https://david-dm.org/tim-hellhake/kafka-bridge?type=optional)
