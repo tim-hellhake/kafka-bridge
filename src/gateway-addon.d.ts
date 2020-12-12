@@ -6,6 +6,17 @@
 
 declare module 'gateway-addon' {
     class Adapter {
-        constructor(addonManager: any, id: string, packageName: string);
+      constructor(_addonManager: unknown, _id: string, _packageName: string);
+    }
+
+    class AddonManager {
+      addAdapter(_adapter: Adapter): void;
+    }
+
+    interface Manifest {
+      name: string,
+      moziot: {
+        config: Record<string, string>
+      }
     }
 }

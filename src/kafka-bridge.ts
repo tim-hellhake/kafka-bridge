@@ -4,59 +4,61 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.*
  */
 
-import { Adapter, } from 'gateway-addon';
-import { WebThingsClient } from 'webthings-client';
-import { Producer, KafkaClient, ProduceRequest } from 'kafka-node';
+import {Adapter, AddonManager, Manifest} from 'gateway-addon';
+import {WebThingsClient} from 'webthings-client';
+import {Producer, KafkaClient, ProduceRequest} from 'kafka-node';
 
 export class KafkaBridge extends Adapter {
-    constructor(addonManager: any, private manifest: any) {
-        super(addonManager, KafkaBridge.name, manifest.name);
-        addonManager.addAdapter(this);
-        this.connectToKafka();
-    }
+  constructor(
+    addonManager: AddonManager, private manifest: Manifest) {
+    super(addonManager, KafkaBridge.name, manifest.name);
+    addonManager.addAdapter(this);
+    this.connectToKafka();
+  }
 
-    private connectToKafka() {
-        const {
-            kafkaHost
-        } = this.manifest.moziot.config;
+  private connectToKafka() {
+    const {
+      kafkaHost,
+    } = this.manifest.moziot.config;
 
-        console.log(`Connecting to kafka at ${kafkaHost}`);
+    console.log(`Connecting to kafka at ${kafkaHost}`);
 
-        const client = new KafkaClient({ kafkaHost });
-        const producer = new Producer(client);
+    const client = new KafkaClient({kafkaHost});
+    const producer = new Producer(client);
 
-        producer.on('ready', () => {
-            this.connectToGateway(producer);
+    producer.on('ready', () => {
+      this.connectToGateway(producer);
+    });
+
+    producer.on('error', (err) => {
+      console.log(`Could not connect to kafka: ${err}`);
+    });
+  }
+
+  private connectToGateway(producer: Producer) {
+    console.log('Connecting to gateway');
+
+    const {
+      accessToken,
+    } = this.manifest.moziot.config;
+
+    (async () => {
+      const webThingsClient = await WebThingsClient.local(accessToken);
+      await webThingsClient.connect();
+      webThingsClient.on('propertyChanged', async (
+        deviceId: string, key: string, value: unknown) => {
+        const messages: ProduceRequest[] = [{
+          topic: deviceId,
+          key,
+          messages: value,
+        }];
+
+        producer.send(messages, (err) => {
+          if (err) {
+            console.log(`Could not send message: ${err}`);
+          }
         });
-
-        producer.on('error', (err) => {
-            console.log(`Could not connect to kafka: ${err}`);
-        })
-    }
-
-    private connectToGateway(producer: Producer) {
-        console.log('Connecting to gateway');
-
-        const {
-            accessToken
-        } = this.manifest.moziot.config;
-
-        (async () => {
-            const webThingsClient = await WebThingsClient.local(accessToken);
-            await webThingsClient.connect();
-            webThingsClient.on('propertyChanged', async (deviceId, key, value) => {
-                const messages: ProduceRequest[] = [{
-                    topic: deviceId,
-                    key,
-                    messages: value
-                }];
-
-                producer.send(messages, (err, _data) => {
-                    if (err) {
-                        console.log(`Could not send message: ${err}`);
-                    }
-                });
-            });
-        })();
-    }
+      });
+    })();
+  }
 }

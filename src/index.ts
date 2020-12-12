@@ -4,6 +4,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.*
  */
 
-import { KafkaBridge } from './kafka-bridge';
+import {AddonManager, Manifest} from 'gateway-addon';
+import {KafkaBridge} from './kafka-bridge';
 
-export = (addonManager: any, manifest: any) => new KafkaBridge(addonManager, manifest);
+export default function(
+  addonManager: AddonManager, manifest: Manifest): void {
+  new KafkaBridge(addonManager, manifest);
+}
