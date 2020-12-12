@@ -30,7 +30,7 @@
   "dependencies": {
     "kafka-node": "^5.0.0",
     "websocket": "^1.0.33",
-    "webthings-client": "1.1.0"
+    "webthings-client": "^3.0.0"
   },
   "devDependencies": {
     "@types/websocket": "^1.0.1",
