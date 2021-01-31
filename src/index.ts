@@ -7,7 +7,7 @@
 import {AddonManager, Manifest} from 'gateway-addon';
 import {KafkaBridge} from './kafka-bridge';
 
-export default function(
+export = function(
   addonManager: AddonManager, manifest: Manifest): void {
   new KafkaBridge(addonManager, manifest);
 }
