@@ -23,7 +23,7 @@ export class KafkaBridge extends Adapter {
   private connectToKafka() {
     const {
       kafkaHost,
-    } = this.manifest.moziot.config;
+    } = this.manifest.moziot.config as Record<string, string>;
 
     console.log(`Connecting to kafka at ${kafkaHost}`);
 
@@ -46,10 +46,12 @@ export class KafkaBridge extends Adapter {
 
     const {
       accessToken,
+      debug,
     } = this.manifest.moziot.config;
 
     (async () => {
-      const webThingsClient = await WebThingsClient.local(accessToken);
+      const webThingsClient =
+      await WebThingsClient.local(accessToken as string);
       await webThingsClient.connect();
       webThingsClient.on('propertyChanged', async (
         deviceId: string, key: string, value: unknown) => {
@@ -105,6 +107,10 @@ export class KafkaBridge extends Adapter {
               }
             });
           } else {
+            if (debug) {
+              console.log(`Sending ${JSON.stringify(message, null, 2)}`);
+            }
+
             producer.send([message], (err) => {
               if (err) {
                 console.log(`Could not send message: ${err}`);

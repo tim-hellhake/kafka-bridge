@@ -31,6 +31,10 @@
         "kafkaHost": {
           "type": "string",
           "title": "One or multiple kafka broker:host combinations delimited by comma"
+        },
+        "debug": {
+          "type": "boolean",
+          "title": "Enable the debug logs"
         }
       }
     }

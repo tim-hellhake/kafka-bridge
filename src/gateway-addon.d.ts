@@ -16,7 +16,7 @@ declare module 'gateway-addon' {
     interface Manifest {
       name: string,
       moziot: {
-        config: Record<string, string>
+        config: Record<string, unknown>
       }
     }
 }
