@@ -6,7 +6,11 @@
 
 import {Adapter, AddonManager, Manifest} from 'gateway-addon';
 import {WebThingsClient} from 'webthings-client';
-import {Producer, KafkaClient, ProduceRequest} from 'kafka-node';
+import {Producer,
+  KafkaClient,
+  ProduceRequest,
+  TopicsNotExistError,
+  CreateTopicRequest} from 'kafka-node';
 
 export class KafkaBridge extends Adapter {
   constructor(
@@ -27,7 +31,7 @@ export class KafkaBridge extends Adapter {
     const producer = new Producer(client);
 
     producer.on('ready', () => {
-      this.connectToGateway(producer);
+      this.connectToGateway(client, producer);
     });
 
     producer.on('error', (err) => {
@@ -35,8 +39,10 @@ export class KafkaBridge extends Adapter {
     });
   }
 
-  private connectToGateway(producer: Producer) {
+  private connectToGateway(client: KafkaClient, producer: Producer) {
     console.log('Connecting to gateway');
+
+    const topicsInProgress: Record<string, ProduceRequest[]> = {};
 
     const {
       accessToken,
@@ -47,15 +53,63 @@ export class KafkaBridge extends Adapter {
       await webThingsClient.connect();
       webThingsClient.on('propertyChanged', async (
         deviceId: string, key: string, value: unknown) => {
-        const messages: ProduceRequest[] = [{
-          topic: deviceId,
+        const topic = deviceId.replace(/[^a-zA-Z0-9\\._-]/g, '_');
+
+        const message: ProduceRequest = {
+          topic,
           key,
           messages: value,
-        }];
+        };
 
-        producer.send(messages, (err) => {
-          if (err) {
-            console.log(`Could not send message: ${err}`);
+        client.topicExists([topic], (error?: TopicsNotExistError) => {
+          const queue = topicsInProgress[topic];
+
+          if (queue) {
+            console.log(
+              `Topic create for ${topic} is in progress, queueing message`);
+
+            queue.push(message);
+            return;
+          }
+
+          if (error) {
+            console.log(
+              `Topic ${topic} does not exist, attempting to create it`);
+
+            topicsInProgress[topic] = [message];
+
+            const request: CreateTopicRequest = {
+              topic,
+              partitions: 1,
+              replicationFactor: 1,
+            };
+
+            client.createTopics([request], (error, result) => {
+              if (error) {
+                console.log(`Could not create topic ${topic}: ${error}`);
+              } else if (result[0]?.error) {
+                console.log(
+                  `Could not create topic ${topic}: ${result[0].error}`);
+              } else {
+                console.log(
+                  `Topic ${topic} created`);
+                const queue = topicsInProgress[topic];
+                console.log(`Sending ${queue.length} queued messages`);
+                delete topicsInProgress[topic];
+
+                producer.send(queue, (err) => {
+                  if (err) {
+                    console.log(`Could not send message: ${err}`);
+                  }
+                });
+              }
+            });
+          } else {
+            producer.send([message], (err) => {
+              if (err) {
+                console.log(`Could not send message: ${err}`);
+              }
+            });
           }
         });
       });
