@@ -31,6 +31,7 @@ export class KafkaBridge extends Adapter {
     const producer = new Producer(client);
 
     producer.on('ready', () => {
+      console.log('Successfully connected to kafka');
       this.connectToGateway(client, producer);
     });
 
@@ -53,6 +54,7 @@ export class KafkaBridge extends Adapter {
       const webThingsClient =
       await WebThingsClient.local(accessToken as string);
       await webThingsClient.connect();
+      console.log('Successfully connected to the gateway');
 
       webThingsClient.on(
         'error',
