@@ -53,6 +53,11 @@ export class KafkaBridge extends Adapter {
       const webThingsClient =
       await WebThingsClient.local(accessToken as string);
       await webThingsClient.connect();
+
+      webThingsClient.on(
+        'error',
+        (e) => console.error(`Received error from websocket: ${e}`));
+
       webThingsClient.on('propertyChanged', async (
         deviceId: string, key: string, value: unknown) => {
         const topic = deviceId.replace(/[^a-zA-Z0-9\\._-]/g, '_');
