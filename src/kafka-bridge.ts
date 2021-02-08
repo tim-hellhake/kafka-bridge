@@ -48,6 +48,8 @@ export class KafkaBridge extends Adapter {
     const {
       accessToken,
       debug,
+      partitions,
+      replicationFactor,
     } = this.manifest.moziot.config;
 
     (async () => {
@@ -89,8 +91,8 @@ export class KafkaBridge extends Adapter {
 
             const request: CreateTopicRequest = {
               topic,
-              partitions: 1,
-              replicationFactor: 1,
+              partitions: partitions as number ?? 1,
+              replicationFactor: replicationFactor as number ?? 1,
             };
 
             client.createTopics([request], (error, result) => {

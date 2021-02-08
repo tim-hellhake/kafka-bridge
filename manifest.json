@@ -32,6 +32,16 @@
           "type": "string",
           "title": "One or multiple kafka broker:host combinations delimited by comma"
         },
+        "partitions": {
+          "type": "integer",
+          "minimum": 1,
+          "title": "The number of partitions for new topics"
+        },
+        "replicationFactor": {
+          "type": "integer",
+          "minimum": 1,
+          "title": "The replication factor for new topics"
+        },
         "debug": {
           "type": "boolean",
           "title": "Enable the debug logs"
