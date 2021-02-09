@@ -17,6 +17,11 @@
     }
   },
   "options": {
+    "default": {
+      "partitions": 1,
+      "replicationFactor": 1,
+      "debug": false
+    },
     "schema": {
       "type": "object",
       "required": [
