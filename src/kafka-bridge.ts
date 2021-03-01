@@ -11,123 +11,133 @@ import {Producer,
   ProduceRequest,
   TopicsNotExistError,
   CreateTopicRequest} from 'kafka-node';
+import {Property} from 'webthings-client/lib/property';
 
 export class KafkaBridge extends Adapter {
+  private topicsInProgress: Record<string, ProduceRequest[]> = {};
+
+  private client: KafkaClient;
+
+  private producer: Producer;
+
   constructor(
     addonManager: AddonManager, private manifest: Manifest) {
     super(addonManager, KafkaBridge.name, manifest.name);
     addonManager.addAdapter(this);
-    this.connectToKafka();
-  }
 
-  private connectToKafka() {
     const {
       kafkaHost,
     } = this.manifest.moziot.config as Record<string, string>;
 
     console.log(`Connecting to kafka at ${kafkaHost}`);
 
-    const client = new KafkaClient({kafkaHost});
-    const producer = new Producer(client);
+    this.client = new KafkaClient({kafkaHost});
+    this.producer = new Producer(this.client);
 
-    producer.on('ready', () => {
+    this.producer.on('ready', () => {
       console.log('Successfully connected to kafka');
-      this.connectToGateway(client, producer);
+      this.connectToGateway();
     });
 
-    producer.on('error', (err) => {
+    this.producer.on('error', (err) => {
       console.log(`Could not connect to kafka: ${err}`);
     });
   }
 
-  private connectToGateway(client: KafkaClient, producer: Producer) {
+  private connectToGateway() {
     console.log('Connecting to gateway');
-
-    const topicsInProgress: Record<string, ProduceRequest[]> = {};
 
     const {
       accessToken,
-      debug,
-      partitions,
-      replicationFactor,
     } = this.manifest.moziot.config;
 
     (async () => {
       const webThingsClient =
       await WebThingsClient.local(accessToken as string);
-      await webThingsClient.connect();
-      console.log('Successfully connected to the gateway');
+      const devices = await webThingsClient.getDevices();
 
-      webThingsClient.on(
-        'error',
-        (e) => console.error(`Received error from websocket: ${e}`));
+      for (const device of devices) {
+        const deviceId = device.id();
+        await device.connect();
+        // eslint-disable-next-line max-len
+        console.log(`Successfully connected to ${device.description.title} (${deviceId})`);
 
-      webThingsClient.on('propertyChanged', async (
-        deviceId: string, key: string, value: unknown) => {
-        const topic = deviceId.replace(/[^a-zA-Z0-9\\._-]/g, '_');
+        device.on('propertyChanged', (property: Property, value: unknown) => {
+          this.onChange(deviceId, property.name, value);
+        });
+      }
+    })();
+  }
 
-        const message: ProduceRequest = {
+  private async onChange(deviceId: string, key: string, value: unknown) {
+    const {
+      debug,
+      partitions,
+      replicationFactor,
+    } = this.manifest.moziot.config;
+
+    const topic = deviceId.replace(/[^a-zA-Z0-9\\._-]/g, '_');
+
+    const message: ProduceRequest = {
+      topic,
+      key,
+      messages: value,
+    };
+
+    this.client.topicExists([topic], (error?: TopicsNotExistError) => {
+      const queue = this.topicsInProgress[topic];
+
+      if (queue) {
+        console.log(
+          `Topic create for ${topic} is in progress, queueing message`);
+
+        queue.push(message);
+        return;
+      }
+
+      if (error) {
+        console.log(
+          `Topic ${topic} does not exist, attempting to create it`);
+
+        this.topicsInProgress[topic] = [message];
+
+        const request: CreateTopicRequest = {
           topic,
-          key,
-          messages: value,
+          partitions: partitions as number ?? 1,
+          replicationFactor: replicationFactor as number ?? 1,
         };
 
-        client.topicExists([topic], (error?: TopicsNotExistError) => {
-          const queue = topicsInProgress[topic];
-
-          if (queue) {
-            console.log(
-              `Topic create for ${topic} is in progress, queueing message`);
-
-            queue.push(message);
-            return;
-          }
-
+        this.client.createTopics([request], (error, result) => {
           if (error) {
+            console.log(`Could not create topic ${topic}: ${error}`);
+          } else if (result[0]?.error) {
             console.log(
-              `Topic ${topic} does not exist, attempting to create it`);
-
-            topicsInProgress[topic] = [message];
-
-            const request: CreateTopicRequest = {
-              topic,
-              partitions: partitions as number ?? 1,
-              replicationFactor: replicationFactor as number ?? 1,
-            };
-
-            client.createTopics([request], (error, result) => {
-              if (error) {
-                console.log(`Could not create topic ${topic}: ${error}`);
-              } else if (result[0]?.error) {
-                console.log(
-                  `Could not create topic ${topic}: ${result[0].error}`);
-              } else {
-                console.log(
-                  `Topic ${topic} created`);
-                const queue = topicsInProgress[topic];
-                console.log(`Sending ${queue.length} queued messages`);
-                delete topicsInProgress[topic];
-
-                producer.send(queue, (err) => {
-                  if (err) {
-                    console.log(`Could not send message: ${err}`);
-                  }
-                });
-              }
-            });
+              `Could not create topic ${topic}: ${result[0].error}`);
           } else {
-            if (debug) {
-              console.log(`Sending ${JSON.stringify(message, null, 2)}`);
-            }
+            console.log(
+              `Topic ${topic} created`);
+            const queue = this.topicsInProgress[topic];
+            console.log(`Sending ${queue.length} queued messages`);
+            delete this.topicsInProgress[topic];
 
-            producer.send([message], (err) => {
+            this.producer.send(queue, (err) => {
               if (err) {
                 console.log(`Could not send message: ${err}`);
               }
             });
           }
         });
-      });
-    })();
+      } else {
+        if (debug) {
+          console.log(`Sending ${JSON.stringify(message, null, 2)}`);
+        }
+
+        this.producer.send([message], (err) => {
+          if (err) {
+            console.log(`Could not send message: ${err}`);
+          }
+        });
+      }
+    });
   }
 }
