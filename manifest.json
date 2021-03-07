@@ -50,6 +50,10 @@
         "debug": {
           "type": "boolean",
           "title": "Enable the debug logs"
+        },
+        "asJson": {
+          "type": "boolean",
+          "title": "Send property as json"
         }
       }
     }

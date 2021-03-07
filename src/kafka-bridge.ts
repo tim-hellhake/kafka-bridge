@@ -74,14 +74,23 @@ export class KafkaBridge extends Adapter {
       debug,
       partitions,
       replicationFactor,
+      asJson,
     } = this.manifest.moziot.config;
 
     const topic = deviceId.replace(/[^a-zA-Z0-9\\._-]/g, '_');
 
+    let payload: string;
+
+    if (asJson) {
+      payload = JSON.stringify({[key]: value});
+    } else {
+      payload = `${value}`;
+    }
+
     const message: ProduceRequest = {
       topic,
       key,
-      messages: value,
+      messages: payload,
     };
 
     this.client.topicExists([topic], (error?: TopicsNotExistError) => {
