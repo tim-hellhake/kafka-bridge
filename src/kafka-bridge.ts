@@ -63,33 +63,46 @@ export class KafkaBridge extends Adapter {
         console.log(`Successfully connected to ${device.description.title} (${deviceId})`);
 
         device.on('propertyChanged', (property: Property, value: unknown) => {
-          this.onChange(deviceId, property.name, value);
+          this.onChange(deviceId, property, value);
         });
       }
     })();
   }
 
-  private async onChange(deviceId: string, key: string, value: unknown) {
+  private async onChange(deviceId: string, property: Property, value: unknown) {
     const {
       debug,
       partitions,
       replicationFactor,
-      asJson,
+      valueFormat,
     } = this.manifest.moziot.config;
 
     const topic = deviceId.replace(/[^a-zA-Z0-9\\._-]/g, '_');
 
     let payload: string;
 
-    if (asJson) {
-      payload = JSON.stringify({[key]: value});
-    } else {
-      payload = `${value}`;
+    switch (valueFormat) {
+      case 'json':
+        payload = JSON.stringify({
+          name: property.name,
+          value: value,
+        });
+        break;
+      case 'json+description':
+        payload = JSON.stringify({
+          ...property.description,
+          name: property.name,
+          value: value,
+        });
+        break;
+      default:
+        payload = `${value}`;
+        break;
     }
 
     const message: ProduceRequest = {
       topic,
-      key,
+      key: property.name,
       messages: payload,
     };
 

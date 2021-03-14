@@ -20,7 +20,8 @@
     "default": {
       "partitions": 1,
       "replicationFactor": 1,
-      "debug": false
+      "debug": false,
+      "valueFormat": "string"
     },
     "schema": {
       "type": "object",
@@ -51,9 +52,13 @@
           "type": "boolean",
           "title": "Enable the debug logs"
         },
-        "asJson": {
-          "type": "boolean",
-          "title": "Send property as json"
+        "valueFormat": {
+          "type": "string",
+          "enum": [
+            "string",
+            "json",
+            "json+description"
+          ]
         }
       }
     }
