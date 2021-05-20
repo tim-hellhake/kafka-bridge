@@ -78,9 +78,14 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.version }}
-    - name: npm lint
+    - name: Install
       run: |
         npm ci
+    - name: Check formatting
+      run: |
+        npx prettier -c 'src/*.ts'
+    - name: Lint
+      run: |
         npm run lint
     - name: Build adapter
       run: |

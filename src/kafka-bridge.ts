@@ -4,14 +4,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.*
  */
 
-import {Adapter, AddonManager, Manifest} from 'gateway-addon';
-import {WebThingsClient} from 'webthings-client';
-import {Producer,
+import { Adapter, AddonManager, Manifest } from 'gateway-addon';
+import { WebThingsClient } from 'webthings-client';
+import {
+  Producer,
   KafkaClient,
   ProduceRequest,
   TopicsNotExistError,
-  CreateTopicRequest} from 'kafka-node';
-import {Property} from 'webthings-client/lib/property';
+  CreateTopicRequest,
+} from 'kafka-node';
+import { Property } from 'webthings-client/lib/property';
 
 export class KafkaBridge extends Adapter {
   private topicsInProgress: Record<string, ProduceRequest[]> = {};
@@ -20,18 +22,15 @@ export class KafkaBridge extends Adapter {
 
   private producer: Producer;
 
-  constructor(
-    addonManager: AddonManager, private manifest: Manifest) {
+  constructor(addonManager: AddonManager, private manifest: Manifest) {
     super(addonManager, KafkaBridge.name, manifest.name);
     addonManager.addAdapter(this);
 
-    const {
-      kafkaHost,
-    } = this.manifest.moziot.config as Record<string, string>;
+    const { kafkaHost } = this.manifest.moziot.config as Record<string, string>;
 
     console.log(`Connecting to kafka at ${kafkaHost}`);
 
-    this.client = new KafkaClient({kafkaHost});
+    this.client = new KafkaClient({ kafkaHost });
     this.producer = new Producer(this.client);
 
     this.producer.on('ready', () => {
@@ -47,13 +46,10 @@ export class KafkaBridge extends Adapter {
   private connectToGateway() {
     console.log('Connecting to gateway');
 
-    const {
-      accessToken,
-    } = this.manifest.moziot.config;
+    const { accessToken } = this.manifest.moziot.config;
 
     (async () => {
-      const webThingsClient =
-      await WebThingsClient.local(accessToken as string);
+      const webThingsClient = await WebThingsClient.local(accessToken as string);
       const devices = await webThingsClient.getDevices();
 
       for (const device of devices) {
@@ -70,12 +66,7 @@ export class KafkaBridge extends Adapter {
   }
 
   private async onChange(deviceId: string, property: Property, value: unknown) {
-    const {
-      debug,
-      partitions,
-      replicationFactor,
-      valueFormat,
-    } = this.manifest.moziot.config;
+    const { debug, partitions, replicationFactor, valueFormat } = this.manifest.moziot.config;
 
     const topic = deviceId.replace(/[^a-zA-Z0-9\\._-]/g, '_');
 
@@ -110,34 +101,30 @@ export class KafkaBridge extends Adapter {
       const queue = this.topicsInProgress[topic];
 
       if (queue) {
-        console.log(
-          `Topic create for ${topic} is in progress, queueing message`);
+        console.log(`Topic create for ${topic} is in progress, queueing message`);
 
         queue.push(message);
         return;
       }
 
       if (error) {
-        console.log(
-          `Topic ${topic} does not exist, attempting to create it`);
+        console.log(`Topic ${topic} does not exist, attempting to create it`);
 
         this.topicsInProgress[topic] = [message];
 
         const request: CreateTopicRequest = {
           topic,
-          partitions: partitions as number ?? 1,
-          replicationFactor: replicationFactor as number ?? 1,
+          partitions: (partitions as number) ?? 1,
+          replicationFactor: (replicationFactor as number) ?? 1,
         };
 
         this.client.createTopics([request], (error, result) => {
           if (error) {
             console.log(`Could not create topic ${topic}: ${error}`);
           } else if (result[0]?.error) {
-            console.log(
-              `Could not create topic ${topic}: ${result[0].error}`);
+            console.log(`Could not create topic ${topic}: ${result[0].error}`);
           } else {
-            console.log(
-              `Topic ${topic} created`);
+            console.log(`Topic ${topic} created`);
             const queue = this.topicsInProgress[topic];
             console.log(`Sending ${queue.length} queued messages`);
             delete this.topicsInProgress[topic];
