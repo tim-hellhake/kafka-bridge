@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.*
  */
 
-import { Adapter, AddonManager, Manifest } from 'gateway-addon';
+import { Adapter, AddonManagerProxy } from 'gateway-addon';
 import { WebThingsClient } from 'webthings-client';
 import {
   Producer,
@@ -23,7 +23,7 @@ export class KafkaBridge extends Adapter {
 
   private producer: Producer;
 
-  constructor(addonManager: AddonManager, private manifest: Manifest) {
+  constructor(addonManager: AddonManagerProxy, private manifest: Manifest) {
     super(addonManager, KafkaBridge.name, manifest.name);
     addonManager.addAdapter(this);
 
