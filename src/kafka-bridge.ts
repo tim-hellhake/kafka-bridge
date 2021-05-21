@@ -14,6 +14,7 @@ import {
   CreateTopicRequest,
 } from 'kafka-node';
 import { Property } from 'webthings-client/lib/property';
+import { Config } from './config';
 
 export class KafkaBridge extends Adapter {
   private topicsInProgress: Record<string, ProduceRequest[]> = {};
@@ -26,7 +27,7 @@ export class KafkaBridge extends Adapter {
     super(addonManager, KafkaBridge.name, manifest.name);
     addonManager.addAdapter(this);
 
-    const { kafkaHost } = this.manifest.moziot.config as Record<string, string>;
+    const { kafkaHost } = this.manifest.moziot.config as Config;
 
     console.log(`Connecting to kafka at ${kafkaHost}`);
 
@@ -46,7 +47,7 @@ export class KafkaBridge extends Adapter {
   private connectToGateway() {
     console.log('Connecting to gateway');
 
-    const { accessToken } = this.manifest.moziot.config;
+    const { accessToken } = this.manifest.moziot.config as Config;
 
     (async () => {
       const webThingsClient = await WebThingsClient.local(accessToken as string);
@@ -66,7 +67,8 @@ export class KafkaBridge extends Adapter {
   }
 
   private async onChange(deviceId: string, property: Property, value: unknown) {
-    const { debug, partitions, replicationFactor, valueFormat } = this.manifest.moziot.config;
+    const { debug, partitions, replicationFactor, valueFormat } = this.manifest.moziot
+      .config as Config;
 
     const topic = deviceId.replace(/[^a-zA-Z0-9\\._-]/g, '_');
 
