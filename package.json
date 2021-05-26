@@ -1,7 +1,7 @@
 {
   "name": "kafka-bridge",
   "display_name": "Kafka bridge",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Expose your devices as topics on a kafka broker",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

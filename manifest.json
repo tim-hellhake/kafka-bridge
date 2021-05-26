@@ -3,7 +3,7 @@
   "id": "kafka-bridge",
   "name": "Kafka bridge",
   "short_name": "Kafka bridge",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Expose your devices as topics on a kafka broker",
   "homepage_url": "https://github.com/tim-hellhake/kafka-bridge#readme",
   "license": "MPL-2.0",
